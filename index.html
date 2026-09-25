@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundPulse - Modern Cloudinary & Supabase Music Streaming</title>
+    <meta name="description" content="A clean, responsive, fully dynamic music streaming web application powered by HTML, CSS, JavaScript, and Supabase.">
+    
+    <!-- Modern Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Feather/Remix Icons via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div id="app" class="app-layout">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-logo">
+                    <div class="logo-icon-wrapper">
+                        <i class="ri-sound-module-fill logo-icon"></i>
+                    </div>
+                    <span class="logo-text">Sound<span class="gradient-text">Pulse</span></span>
+                </div>
+                <button class="mobile-close-btn" id="mobileCloseBtn" aria-label="Close sidebar">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">MENU</div>
+                <ul class="nav-list">
+                    <li class="nav-item active" data-tab="discover">
+                        <a href="#discover" class="nav-link" id="navDiscover">
+                            <i class="ri-compass-3-line"></i>
+                            <span>Discover</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-tab="songs">
+                        <a href="#songs" class="nav-link" id="navSongs">
+                            <i class="ri-music-2-line"></i>
+                            <span>All Songs</span>
+                            <span class="badge" id="sidebarSongCount">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-tab="admin">
+                        <a href="#admin" class="nav-link" id="navAdmin">
+                            <i class="ri-dashboard-line"></i>
+                            <span>Admin Dashboard</span>
+                            <span class="badge badge-admin">CRUD</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-section-label">SYSTEM & DATABASE</div>
+                <ul class="nav-list">
+                    <li class="nav-item" id="navSettings">
+                        <a href="javascript:void(0)" class="nav-link" id="btnOpenSettings">
+                            <i class="ri-settings-4-line"></i>
+                            <span>Supabase Setup</span>
+                            <span class="status-indicator status-offline" id="dbStatusDot" title="Database status"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link" id="btnOpenSqlGuide">
+                            <i class="ri-database-2-line"></i>
+                            <span>SQL Guide</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="db-status-pill" id="dbStatusPill">
+                    <span class="pulse-dot"></span>
+                    <span id="dbStatusText">Checking Supabase...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Sticky Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+                        <i class="ri-menu-2-line"></i>
+                    </button>
+
+                    <!-- Dynamic Live Search -->
+                    <div class="search-bar-wrapper">
+                        <i class="ri-search-line search-icon"></i>
+                        <input 
+                            type="search" 
+                            id="searchInput" 
+                            placeholder="Search by title, artist, or album..." 
+                            autocomplete="off"
+                            aria-label="Search songs"
+                        >
+                        <button class="search-clear-btn hidden" id="searchClearBtn" aria-label="Clear search">
+                            <i class="ri-close-circle-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <button class="icon-btn" id="btnRefresh" title="Refresh library">
+                        <i class="ri-refresh-line"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="btnHeaderAdmin">
+                        <i class="ri-add-line"></i>
+                        <span>Add Song</span>
+                    </button>
+                    <button class="icon-btn" id="btnConfigGear" title="Supabase Settings">
+                        <i class="ri-settings-line"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Tab Container -->
+            <div class="content-scrollable">
+
+                <!-- TAB: DISCOVER / USER SIDE -->
+                <section class="tab-page active" id="tabDiscover">
+                    <!-- Dynamic Hero / Featured Track -->
+                    <div class="hero-banner" id="heroBanner">
+                        <div class="hero-overlay"></div>
+                        <div class="hero-content">
+                            <div class="hero-badge"><i class="ri-sparkling-fill"></i> FEATURED TRACK</div>
+                            <h1 class="hero-title" id="heroTitle">Connect to Supabase</h1>
+                            <p class="hero-artist" id="heroArtist">Click below to start playing your Cloudinary audio streams</p>
+                            <div class="hero-actions">
+                                <button class="btn btn-primary" id="heroPlayBtn">
+                                    <i class="ri-play-fill"></i> Play Featured
+                                </button>
+                                <button class="btn btn-outline" id="heroAdminBtn">
+                                    <i class="ri-equalizer-line"></i> Manage Songs
+                                </button>
+                            </div>
+                        </div>
+                        <div class="hero-visual">
+                            <div class="hero-vinyl-wrapper" id="heroVinyl">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80" alt="Featured Album Art" id="heroCoverImg">
+                                <div class="vinyl-center"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Song Collection Header -->
+                    <div class="section-header">
+                        <div class="section-title-wrap">
+                            <h2 class="section-title">All Songs</h2>
+                            <span class="section-subtitle" id="songCounterSubtitle">Loading songs...</span>
+                        </div>
+                        <div class="view-controls">
+                            <button class="view-btn active" id="btnGridView" title="Grid View">
+                                <i class="ri-grid-fill"></i>
+                            </button>
+                            <button class="view-btn" id="btnListView" title="List View">
+                                <i class="ri-list-check-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Song Cards Container -->
+                    <div class="songs-container grid-view" id="songsContainer">
+                        <!-- Content dynamically rendered via app.js -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state hidden" id="emptyState">
+                        <div class="empty-icon-wrap">
+                            <i class="ri-disc-line"></i>
+                        </div>
+                        <h3 class="empty-title" id="emptyTitle">No Songs Found</h3>
+                        <p class="empty-desc" id="emptyDesc">Try adjusting your search criteria or add your first song via the Admin Dashboard.</p>
+                        <button class="btn btn-primary" id="btnEmptyAddSong">
+                            <i class="ri-add-line"></i> Add New Song
+                        </button>
+                    </div>
+
+                    <!-- Error State / Missing Config State -->
+                    <div class="error-state hidden" id="errorState">
+                        <div class="error-icon-wrap">
+                            <i class="ri-error-warning-line"></i>
+                        </div>
+                        <h3 class="error-title">Supabase Connection Required</h3>
+                        <p class="error-desc" id="errorMessage">Please configure your Supabase Project URL and Public Anon Key to dynamically stream audio and manage songs.</p>
+                        <div class="error-actions">
+                            <button class="btn btn-primary" id="btnErrorSetup">
+                                <i class="ri-settings-4-line"></i> Configure Supabase
+                            </button>
+                            <button class="btn btn-outline" id="btnErrorRetry">
+                                <i class="ri-refresh-line"></i> Retry Connection
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: ADMIN DASHBOARD (CRUD) -->
+                <section class="tab-page" id="tabAdmin">
+                    <div class="admin-header-panel">
+                        <div class="admin-titles">
+                            <span class="hero-badge"><i class="ri-shield-keyhole-line"></i> ADMIN DASHBOARD</span>
+                            <h1 class="admin-title">Song Management & CRUD</h1>
+                            <p class="admin-subtitle">Add, edit, and delete dynamic audio tracks. Changes sync instantly across all clients.</p>
+                        </div>
+                    </div>
+
+                    <!-- Admin Two-Column Grid: Form on Left, Live Table on Right -->
+                    <div class="admin-layout-grid">
+                        <!-- Add / Edit Song Card -->
+                        <div class="card glass-card admin-form-card">
+                            <div class="card-header">
+                                <h3 class="card-title" id="adminFormHeading">
+                                    <i class="ri-add-circle-line"></i> Add New Track
+                                </h3>
+                                <button class="btn-text-link hidden" id="btnCancelEdit">Cancel Edit</button>
+                            </div>
+
+                            <form id="adminSongForm" class="admin-form" novalidate>
+                                <input type="hidden" id="formSongId">
+
+                                <div class="form-group">
+                                    <label for="formTitle" class="form-label">Song Title <span class="required">*</span></label>
+                                    <input 
+                                        type="text" 
+                                        id="formTitle" 
+                                        class="form-control" 
+                                        placeholder="e.g. Ey Inga Paaru" 
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="formArtist" class="form-label">Artist <span class="required">*</span></label>
+                                        <input 
+                                            type="text" 
+                                            id="formArtist" 
+                                            class="form-control" 
+                                            placeholder="e.g. StarMusiQ Artists" 
+                                            required
+                                        >
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="formAlbum" class="form-label">Album / Collection</label>
+                                        <input 
+                                            type="text" 
+                                            id="formAlbum" 
+                                            class="form-control" 
+                                            placeholder="e.g. Kollywood Hits"
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="formCoverUrl" class="form-label">Cover Image URL <span class="required">*</span></label>
+                                    <div class="input-with-preview">
+                                        <input 
+                                            type="url" 
+                                            id="formCoverUrl" 
+                                            class="form-control" 
+                                            placeholder="https://images.unsplash.com/..." 
+                                            required
+                                        >
+                                        <div class="cover-mini-preview" id="coverPreviewWrap" title="Live Cover Preview">
+                                            <img id="formCoverPreview" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=160&q=80" alt="Preview">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="formAudioUrl" class="form-label">Cloudinary Audio URL <span class="required">*</span></label>
+                                    <input 
+                                        type="url" 
+                                        id="formAudioUrl" 
+                                        class="form-control" 
+                                        placeholder="https://res.cloudinary.com/.../audio.mp3" 
+                                        required
+                                    >
+                                    <div class="form-hint">
+                                        <span>Supports direct Cloudinary or standard MP3/AAC audio streams.</span>
+                                        <button type="button" class="btn-text-link" id="btnUseExampleUrl">Paste Example Cloudinary URL</button>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary btn-block" id="btnSubmitSong">
+                                        <i class="ri-check-line"></i> <span id="submitBtnText">Add Song to Supabase</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Song Table / List View -->
+                        <div class="card glass-card admin-table-card">
+                            <div class="card-header space-between">
+                                <h3 class="card-title">
+                                    <i class="ri-database-line"></i> Existing Songs in Supabase (<span id="adminTableCount">0</span>)
+                                </h3>
+                                <button class="btn btn-outline btn-sm" id="btnAdminRefresh">
+                                    <i class="ri-refresh-line"></i> Refresh
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="admin-table" id="adminSongsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Cover</th>
+                                            <th>Title & Artist</th>
+                                            <th>Album</th>
+                                            <th>Audio Stream</th>
+                                            <th class="text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminTableBody">
+                                        <!-- Dynamically generated rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Persistent Bottom Music Player -->
+        <footer class="bottom-player" id="bottomPlayer">
+            <div class="player-grid">
+                
+                <!-- Track Meta -->
+                <div class="player-track-info">
+                    <div class="track-thumb-wrapper" id="playerThumbWrapper">
+                        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=160&q=80" alt="Current Track" id="playerCoverImg" class="player-cover">
+                        <div class="playing-equalizer hidden" id="playerEqualizer">
+                            <span class="bar bar-1"></span>
+                            <span class="bar bar-2"></span>
+                            <span class="bar bar-3"></span>
+                        </div>
+                    </div>
+                    <div class="track-details">
+                        <span class="track-title" id="playerTitle">No Track Selected</span>
+                        <span class="track-artist" id="playerArtist">Select a song to start streaming</span>
+                    </div>
+                </div>
+
+                <!-- Center Controls & Progress Bar -->
+                <div class="player-center-controls">
+                    <div class="control-buttons">
+                        <button class="btn-control" id="btnShuffle" title="Shuffle (S)">
+                            <i class="ri-shuffle-line"></i>
+                        </button>
+                        <button class="btn-control" id="btnPrev" title="Previous (Left Arrow)">
+                            <i class="ri-skip-back-fill"></i>
+                        </button>
+                        <button class="btn-play-pause" id="btnPlayPause" title="Play/Pause (Space)">
+                            <i class="ri-play-fill" id="playPauseIcon"></i>
+                        </button>
+                        <button class="btn-control" id="btnNext" title="Next (Right Arrow)">
+                            <i class="ri-skip-forward-fill"></i>
+                        </button>
+                        <button class="btn-control" id="btnRepeat" title="Repeat (R)">
+                            <i class="ri-repeat-line"></i>
+                        </button>
+                    </div>
+
+                    <!-- Seekable Audio Timeline Bar -->
+                    <div class="timeline-wrapper">
+                        <span class="time-label" id="currentTime">0:00</span>
+                        <div class="progress-bar-container" id="progressBarContainer">
+                            <div class="progress-bar-buffered" id="progressBuffered"></div>
+                            <div class="progress-bar-fill" id="progressBarFill"></div>
+                            <input 
+                                type="range" 
+                                id="seekSlider" 
+                                min="0" 
+                                max="100" 
+                                value="0" 
+                                step="0.1" 
+                                aria-label="Seek audio"
+                            >
+                        </div>
+                        <span class="time-label" id="totalDuration">0:00</span>
+                    </div>
+                </div>
+
+                <!-- Volume and Additional Controls -->
+                <div class="player-right-controls">
+                    <div class="volume-control-wrapper">
+                        <button class="btn-control" id="btnMute" title="Mute/Unmute">
+                            <i class="ri-volume-up-line" id="volumeIcon"></i>
+                        </button>
+                        <input 
+                            type="range" 
+                            id="volumeSlider" 
+                            min="0" 
+                            max="1" 
+                            step="0.01" 
+                            value="0.8" 
+                            aria-label="Volume slider"
+                        >
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Hidden Native HTML5 Audio Engine -->
+        <audio id="audioEngine" preload="metadata"></audio>
+
+        <!-- Settings Modal (Supabase Configuration) -->
+        <div class="modal-backdrop hidden" id="settingsModal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div class="modal-title-wrap">
+                        <i class="ri-settings-4-fill modal-icon"></i>
+                        <h3 class="modal-title">Supabase Database Settings</h3>
+                    </div>
+                    <button class="modal-close-btn" id="btnCloseSettingsModal" aria-label="Close modal">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-description">
+                        Provide your Supabase project credentials. Credentials are automatically saved to your browser's local storage or can be placed in <code>config.js</code>.
+                    </p>
+                    
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label for="cfgSupabaseUrl" class="form-label">Supabase Project URL <span class="required">*</span></label>
+                            <input 
+                                type="url" 
+                                id="cfgSupabaseUrl" 
+                                class="form-control" 
+                                placeholder="https://your-project-id.supabase.co" 
+                                required
+                            >
+                            <span class="form-hint">Find this in your Supabase Dashboard &gt; Project Settings &gt; API</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cfgSupabaseKey" class="form-label">Supabase Anon Public API Key <span class="required">*</span></label>
+                            <textarea 
+                                id="cfgSupabaseKey" 
+                                class="form-control code-font" 
+                                rows="3" 
+                                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." 
+                                required
+                            ></textarea>
+                            <span class="form-hint">Safe to use in public client browsers with RLS enabled.</span>
+                        </div>
+
+                        <div class="modal-test-status hidden" id="modalTestStatus"></div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" id="btnTestSupabaseConnection">
+                                <i class="ri-wifi-line"></i> Test Connection
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="btnSaveSupabaseConfig">
+                                <i class="ri-save-line"></i> Save & Connect
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- SQL Schema Quick Guide Modal -->
+        <div class="modal-backdrop hidden" id="sqlGuideModal">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-header">
+                    <div class="modal-title-wrap">
+                        <i class="ri-database-2-fill modal-icon"></i>
+                        <h3 class="modal-title">Supabase SQL Schema & Setup</h3>
+                    </div>
+                    <button class="modal-close-btn" id="btnCloseSqlModal" aria-label="Close modal">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-description">
+                        Run this SQL query inside your Supabase SQL Editor to initialize the <code>songs</code> table and Row Level Security (RLS) policies.
+                    </p>
+                    <div class="code-preview-wrapper">
+                        <button class="btn-copy-code" id="btnCopySql">
+                            <i class="ri-file-copy-line"></i> Copy SQL
+                        </button>
+                        <pre><code id="sqlCodeBlock">-- 1. Create the `songs` table
+CREATE TABLE IF NOT EXISTS public.songs (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    album TEXT NOT NULL DEFAULT 'Single',
+    cover_url TEXT NOT NULL,
+    audio_url TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 2. Enable Row Level Security (RLS)
+ALTER TABLE public.songs ENABLE ROW LEVEL SECURITY;
+
+-- 3. Create RLS Policies
+CREATE POLICY "Public songs are viewable by everyone" ON public.songs FOR SELECT USING (true);
+CREATE POLICY "Anyone can insert songs" ON public.songs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can update songs" ON public.songs FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Anyone can delete songs" ON public.songs FOR DELETE USING (true);
+
+-- 4. Seed initial song with Cloudinary audio URL
+INSERT INTO public.songs (title, artist, album, cover_url, audio_url)
+VALUES (
+    'Ey Inga Paaru', 
+    'StarMusiQ Artists', 
+    'Kollywood Beats', 
+    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80', 
+    'https://res.cloudinary.com/tyqpilxi/video/upload/v1790314415/Ey_Inga_Paaru-StarMusiQ.Com.mp3'
+);</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications System -->
+        <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
